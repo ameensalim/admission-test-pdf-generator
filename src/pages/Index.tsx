@@ -2,32 +2,67 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidatesTable } from "@/components/CandidatesTable";
 import { AddCandidateForm } from "@/components/AddCandidateForm";
-import { getAllCandidates } from "@/services/database";
+import { EditCandidateDialog } from "@/components/EditCandidateDialog";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { getAllCandidates, getPaginatedCandidates, searchCandidates } from "@/services/database";
 import { Candidate } from "@/types";
 import { Card } from "@/components/ui/card";
+import { Search, Settings } from "lucide-react";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 const Index = () => {
   const { toast } = useToast();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [filteredCandidates, setFilteredCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewType, setViewType] = useState<"cards" | "table">("cards");
   const [showForm, setShowForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 6;
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(null);
+  
+  // Settings dialog state
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   
   useEffect(() => {
-    fetchCandidates();
-  }, []);
+    if (searchQuery) {
+      handleSearch();
+    } else {
+      fetchCandidates();
+    }
+  }, [currentPage, searchQuery]);
   
   const fetchCandidates = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const data = await getAllCandidates();
+      const { candidates: data, total } = await getPaginatedCandidates(currentPage, pageSize);
       setCandidates(data);
+      setFilteredCandidates(data);
+      setTotalItems(total);
+      setTotalPages(Math.ceil(total / pageSize));
     } catch (err) {
       setError("Failed to load candidates. Please try again later.");
       toast({
@@ -40,13 +75,68 @@ const Index = () => {
     }
   };
   
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchCandidates();
+      return;
+    }
+    
+    setIsSearching(true);
+    setIsLoading(true);
+    
+    try {
+      const results = await searchCandidates(searchQuery);
+      setFilteredCandidates(results);
+      setTotalPages(1);
+      setCurrentPage(1);
+    } catch (error) {
+      toast({
+        title: "Search Error",
+        description: "Failed to search candidates. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setIsSearching(false);
+    }
+  };
+  
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    if (!e.target.value) {
+      fetchCandidates();
+    }
+  };
+  
   const handleAddCandidate = (candidate: Candidate) => {
-    setCandidates(prev => [candidate, ...prev]);
+    fetchCandidates(); // Refresh the list after adding
     setShowForm(false);
   };
   
   const handleDeleteCandidate = (id: number) => {
     setCandidates(prev => prev.filter(c => c.id !== id));
+    setFilteredCandidates(prev => prev.filter(c => c.id !== id));
+    
+    // Check if we need to fetch the previous page
+    if (filteredCandidates.length === 1 && currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    } else {
+      fetchCandidates();
+    }
+  };
+  
+  const handleEditCandidate = (candidate: Candidate) => {
+    setCurrentCandidate(candidate);
+    setEditDialogOpen(true);
+  };
+  
+  const handleUpdateCandidate = (updatedCandidate: Candidate) => {
+    setCandidates(prev => 
+      prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c)
+    );
+    setFilteredCandidates(prev => 
+      prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c)
+    );
   };
 
   return (
@@ -62,34 +152,60 @@ const Index = () => {
                 Generate and download admit cards for candidates
               </p>
             </div>
-            <div className="mt-4 md:mt-0 flex gap-3">
+            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
               <Button
-                variant={viewType === "cards" ? "default" : "outline"}
-                onClick={() => setViewType("cards")}
-                className="transition-all"
+                variant="outline"
+                size="sm"
+                onClick={() => setSettingsDialogOpen(true)}
+                className="flex items-center gap-2"
               >
-                Cards View
+                <Settings size={16} />
+                <span>Settings</span>
               </Button>
-              <Button
-                variant={viewType === "table" ? "default" : "outline"}
-                onClick={() => setViewType("table")}
-                className="transition-all"
-              >
-                Table View
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant={viewType === "cards" ? "default" : "outline"}
+                  onClick={() => setViewType("cards")}
+                  className="transition-all"
+                >
+                  Cards View
+                </Button>
+                <Button
+                  variant={viewType === "table" ? "default" : "outline"}
+                  onClick={() => setViewType("table")}
+                  className="transition-all"
+                >
+                  Table View
+                </Button>
+              </div>
             </div>
           </div>
           
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-              {showForm ? "Add New Candidate" : `Candidates (${candidates.length})`}
+              {showForm ? "Add New Candidate" : `Candidates (${totalItems})`}
             </h2>
-            <Button 
-              onClick={() => setShowForm(!showForm)}
-              variant={showForm ? "outline" : "default"}
-            >
-              {showForm ? "Cancel" : "Add New Candidate"}
-            </Button>
+            
+            <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+              {!showForm && (
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search candidates..."
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                    className="pl-9"
+                  />
+                </div>
+              )}
+              
+              <Button 
+                onClick={() => setShowForm(!showForm)}
+                variant={showForm ? "outline" : "default"}
+              >
+                {showForm ? "Cancel" : "Add New Candidate"}
+              </Button>
+            </div>
           </div>
         </header>
         
@@ -103,7 +219,9 @@ const Index = () => {
               <div className="flex justify-center items-center h-64">
                 <div className="animate-pulse text-center">
                   <div className="h-12 w-12 mx-auto rounded-full bg-blue-200 dark:bg-blue-700"></div>
-                  <p className="mt-4 text-gray-500 dark:text-gray-400">Loading candidates...</p>
+                  <p className="mt-4 text-gray-500 dark:text-gray-400">
+                    {isSearching ? "Searching candidates..." : "Loading candidates..."}
+                  </p>
                 </div>
               </div>
             ) : error ? (
@@ -117,38 +235,171 @@ const Index = () => {
                   Try Again
                 </Button>
               </Card>
-            ) : candidates.length === 0 ? (
+            ) : filteredCandidates.length === 0 ? (
               <Card className="p-8 text-center">
                 <h3 className="text-xl font-medium text-gray-600 dark:text-gray-300 mb-4">
-                  No candidates found
+                  {searchQuery ? "No candidates match your search" : "No candidates found"}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  Add your first candidate to get started
+                  {searchQuery ? (
+                    <>
+                      Try using different keywords or
+                      <Button 
+                        variant="link" 
+                        className="px-1 py-0 h-auto" 
+                        onClick={() => setSearchQuery("")}
+                      >
+                        clear your search
+                      </Button>
+                    </>
+                  ) : "Add your first candidate to get started"}
                 </p>
-                <Button onClick={() => setShowForm(true)}>
-                  Add Candidate
-                </Button>
+                {!searchQuery && (
+                  <Button onClick={() => setShowForm(true)}>
+                    Add Candidate
+                  </Button>
+                )}
               </Card>
             ) : viewType === "cards" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
-                {candidates.map(candidate => (
-                  <CandidateCard 
-                    key={candidate.id} 
-                    candidate={candidate} 
-                    onDelete={handleDeleteCandidate} 
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
+                  {filteredCandidates.map(candidate => (
+                    <CandidateCard 
+                      key={candidate.id} 
+                      candidate={candidate} 
+                      onDelete={handleDeleteCandidate}
+                      onEdit={handleEditCandidate}
+                    />
+                  ))}
+                </div>
+                {!searchQuery && totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(page => (
+                            page === 1 || 
+                            page === totalPages || 
+                            Math.abs(page - currentPage) <= 1
+                          ))
+                          .map((page, i, arr) => {
+                            // Add ellipsis
+                            if (i > 0 && page > arr[i - 1] + 1) {
+                              return (
+                                <PaginationItem key={`ellipsis-${page}`}>
+                                  <PaginationLink disabled>...</PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            return (
+                              <PaginationItem key={page}>
+                                <PaginationLink
+                                  isActive={page === currentPage}
+                                  onClick={() => setCurrentPage(page)}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          })
+                        }
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="animate-in fade-in">
-                <CandidatesTable 
-                  candidates={candidates} 
-                  onDelete={handleDeleteCandidate} 
-                />
-              </div>
+              <>
+                <div className="animate-in fade-in">
+                  <CandidatesTable 
+                    candidates={filteredCandidates} 
+                    onDelete={handleDeleteCandidate} 
+                    onEdit={handleEditCandidate}
+                  />
+                </div>
+                {!searchQuery && totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(page => (
+                            page === 1 || 
+                            page === totalPages || 
+                            Math.abs(page - currentPage) <= 1
+                          ))
+                          .map((page, i, arr) => {
+                            // Add ellipsis
+                            if (i > 0 && page > arr[i - 1] + 1) {
+                              return (
+                                <PaginationItem key={`ellipsis-${page}`}>
+                                  <PaginationLink disabled>...</PaginationLink>
+                                </PaginationItem>
+                              );
+                            }
+                            
+                            return (
+                              <PaginationItem key={page}>
+                                <PaginationLink
+                                  isActive={page === currentPage}
+                                  onClick={() => setCurrentPage(page)}
+                                  className="cursor-pointer"
+                                >
+                                  {page}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          })
+                        }
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
+        
+        <EditCandidateDialog 
+          candidate={currentCandidate} 
+          open={editDialogOpen} 
+          onOpenChange={setEditDialogOpen}
+          onUpdate={handleUpdateCandidate}
+        />
+        
+        <SettingsDialog 
+          open={settingsDialogOpen} 
+          onOpenChange={setSettingsDialogOpen}
+        />
       </div>
     </div>
   );

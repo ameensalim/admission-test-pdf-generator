@@ -1,5 +1,5 @@
 
-import { Candidate } from '../types';
+import { Candidate, Settings } from '../types';
 
 // Mock database with some initial data
 let candidates: Candidate[] = [
@@ -38,10 +38,43 @@ let candidates: Candidate[] = [
   }
 ];
 
+// Initial settings
+let settings: Settings = {
+  nextFormNumber: 24261,  // Starting from the next number after the last candidate
+  nextTokenNumber: 62     // Starting from the next number after the last candidate
+};
+
 // Get all candidates
 export const getAllCandidates = (): Promise<Candidate[]> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve([...candidates]), 500);
+  });
+};
+
+// Search candidates
+export const searchCandidates = (query: string): Promise<Candidate[]> => {
+  return new Promise((resolve) => {
+    const lowercaseQuery = query.toLowerCase();
+    const results = candidates.filter(candidate => 
+      candidate.name.toLowerCase().includes(lowercaseQuery) ||
+      candidate.formNo.toLowerCase().includes(lowercaseQuery) ||
+      candidate.tokenNo.toLowerCase().includes(lowercaseQuery) ||
+      candidate.place.toLowerCase().includes(lowercaseQuery)
+    );
+    setTimeout(() => resolve(results), 300);
+  });
+};
+
+// Get paginated candidates
+export const getPaginatedCandidates = (page: number, pageSize: number): Promise<{candidates: Candidate[], total: number}> => {
+  return new Promise((resolve) => {
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedCandidates = candidates.slice(startIndex, endIndex);
+    setTimeout(() => resolve({
+      candidates: paginatedCandidates,
+      total: candidates.length
+    }), 300);
   });
 };
 
@@ -56,12 +89,41 @@ export const getCandidateById = (id: number): Promise<Candidate | undefined> => 
 };
 
 // Add a new candidate
-export const addCandidate = (candidate: Omit<Candidate, 'id'>): Promise<Candidate> => {
+export const addCandidate = (candidate: Omit<Candidate, 'id' | 'formNo' | 'tokenNo'>): Promise<Candidate> => {
   return new Promise((resolve) => {
     const newId = candidates.length > 0 ? Math.max(...candidates.map(c => c.id)) + 1 : 1;
-    const newCandidate = { ...candidate, id: newId };
-    candidates = [...candidates, newCandidate];
+    
+    // Use the next form and token numbers from settings
+    const formNo = settings.nextFormNumber.toString();
+    const tokenNo = settings.nextTokenNumber.toString();
+    
+    // Increment the settings
+    settings.nextFormNumber++;
+    settings.nextTokenNumber++;
+    
+    const newCandidate = { 
+      ...candidate, 
+      id: newId, 
+      formNo, 
+      tokenNo 
+    };
+    
+    candidates = [newCandidate, ...candidates];
     setTimeout(() => resolve(newCandidate), 500);
+  });
+};
+
+// Update an existing candidate
+export const updateCandidate = (updatedCandidate: Candidate): Promise<Candidate> => {
+  return new Promise((resolve, reject) => {
+    const index = candidates.findIndex(c => c.id === updatedCandidate.id);
+    
+    if (index !== -1) {
+      candidates[index] = updatedCandidate;
+      setTimeout(() => resolve(updatedCandidate), 500);
+    } else {
+      setTimeout(() => reject(new Error("Candidate not found")), 500);
+    }
   });
 };
 
@@ -71,5 +133,20 @@ export const deleteCandidate = (id: number): Promise<boolean> => {
     const initialLength = candidates.length;
     candidates = candidates.filter(c => c.id !== id);
     setTimeout(() => resolve(candidates.length < initialLength), 500);
+  });
+};
+
+// Get settings
+export const getSettings = (): Promise<Settings> => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve({...settings}), 300);
+  });
+};
+
+// Update settings
+export const updateSettings = (newSettings: Settings): Promise<Settings> => {
+  return new Promise((resolve) => {
+    settings = {...newSettings};
+    setTimeout(() => resolve({...settings}), 500);
   });
 };

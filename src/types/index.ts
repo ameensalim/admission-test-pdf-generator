@@ -11,3 +11,8 @@ export interface Candidate {
   examDate?: string;
   examTime?: string;
 }
+
+export interface Settings {
+  nextFormNumber: number;
+  nextTokenNumber: number;
+}

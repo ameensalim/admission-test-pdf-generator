@@ -5,13 +5,15 @@ import { Candidate } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 import { downloadPDF } from "@/services/pdfService";
 import { deleteCandidate } from "@/services/database";
+import { Edit, Trash2, FileDown } from "lucide-react";
 
 interface CandidateCardProps {
   candidate: Candidate;
   onDelete: (id: number) => void;
+  onEdit: (candidate: Candidate) => void;
 }
 
-export const CandidateCard = ({ candidate, onDelete }: CandidateCardProps) => {
+export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProps) => {
   const handleGeneratePDF = async () => {
     try {
       toast({
@@ -35,6 +37,8 @@ export const CandidateCard = ({ candidate, onDelete }: CandidateCardProps) => {
   };
 
   const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this candidate?")) return;
+    
     try {
       const success = await deleteCandidate(candidate.id);
       
@@ -98,19 +102,31 @@ export const CandidateCard = ({ candidate, onDelete }: CandidateCardProps) => {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-2">
+      <CardFooter className="flex justify-between pt-2 gap-2">
+        <div className="flex gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleDelete}
+            title="Delete candidate"
+          >
+            <Trash2 size={16} className="text-red-500" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onEdit(candidate)}
+            title="Edit candidate"
+          >
+            <Edit size={16} />
+          </Button>
+        </div>
         <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDelete}
-        >
-          Delete
-        </Button>
-        <Button
-          size="sm"
           onClick={handleGeneratePDF}
+          className="flex gap-1 items-center"
         >
-          Generate PDF
+          <FileDown size={16} />
+          <span>Generate PDF</span>
         </Button>
       </CardFooter>
     </Card>

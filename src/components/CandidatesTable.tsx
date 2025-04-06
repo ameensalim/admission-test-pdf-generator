@@ -5,13 +5,15 @@ import { Candidate } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 import { downloadPDF } from "@/services/pdfService";
 import { deleteCandidate } from "@/services/database";
+import { Edit, FileDown, Trash2 } from "lucide-react";
 
 interface CandidatesTableProps {
   candidates: Candidate[];
   onDelete: (id: number) => void;
+  onEdit: (candidate: Candidate) => void;
 }
 
-export const CandidatesTable = ({ candidates, onDelete }: CandidatesTableProps) => {
+export const CandidatesTable = ({ candidates, onDelete, onEdit }: CandidatesTableProps) => {
   const handleGeneratePDF = async (candidate: Candidate) => {
     try {
       toast({
@@ -35,6 +37,8 @@ export const CandidatesTable = ({ candidates, onDelete }: CandidatesTableProps) 
   };
 
   const handleDelete = async (candidate: Candidate) => {
+    if (!confirm("Are you sure you want to delete this candidate?")) return;
+    
     try {
       const success = await deleteCandidate(candidate.id);
       
@@ -86,16 +90,28 @@ export const CandidatesTable = ({ candidates, onDelete }: CandidatesTableProps) 
               <TableCell className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  size="sm" 
+                  size="icon" 
                   onClick={() => handleDelete(candidate)}
+                  title="Delete candidate"
                 >
-                  Delete
+                  <Trash2 size={16} className="text-red-500" />
                 </Button>
                 <Button 
-                  size="sm" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => onEdit(candidate)}
+                  title="Edit candidate"
+                >
+                  <Edit size={16} />
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="flex gap-1 items-center"
                   onClick={() => handleGeneratePDF(candidate)}
                 >
-                  Generate PDF
+                  <FileDown size={16} />
+                  <span>Generate PDF</span>
                 </Button>
               </TableCell>
             </TableRow>
