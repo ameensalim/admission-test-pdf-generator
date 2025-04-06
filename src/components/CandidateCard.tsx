@@ -70,7 +70,7 @@ export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProp
         <CardTitle className="flex justify-between items-center">
           <span>{candidate.name}</span>
           <span className="text-sm bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full">
-            Form #{candidate.formNo}
+            Form #{candidate.form_no}
           </span>
         </CardTitle>
       </CardHeader>
@@ -78,7 +78,7 @@ export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProp
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div className="text-sm text-gray-500 dark:text-gray-400">Token No.</div>
-            <div className="text-sm font-medium">{candidate.tokenNo}</div>
+            <div className="text-sm font-medium">{candidate.token_no}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="text-sm text-gray-500 dark:text-gray-400">Date of Birth</div>

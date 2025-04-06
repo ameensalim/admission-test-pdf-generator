@@ -1,152 +1,204 @@
 
+import { supabase } from '../integrations/supabase/client';
 import { Candidate, Settings } from '../types';
 
-// Mock database with some initial data
-let candidates: Candidate[] = [
-  {
-    id: 1,
-    formNo: "24258",
-    tokenNo: "59",
-    name: "Faaz Ahmad",
-    dob: "12-3-2013",
-    contactNo: "9902700413",
-    place: "Puttur",
-    examDate: "21-04-2024",
-    examTime: "12.00 - 1.30 pm"
-  },
-  {
-    id: 2,
-    formNo: "24259",
-    tokenNo: "60",
-    name: "Risha Khan",
-    dob: "15-5-2012",
-    contactNo: "9845123678",
-    place: "Mangalore",
-    examDate: "21-04-2024",
-    examTime: "12.00 - 1.30 pm"
-  },
-  {
-    id: 3,
-    formNo: "24260",
-    tokenNo: "61",
-    name: "Zain Ali",
-    dob: "28-1-2013",
-    contactNo: "8875421369",
-    place: "Bangalore",
-    examDate: "21-04-2024",
-    examTime: "2.00 - 3.30 pm"
-  }
-];
-
-// Initial settings
-let settings: Settings = {
-  nextFormNumber: 24261,  // Starting from the next number after the last candidate
-  nextTokenNumber: 62     // Starting from the next number after the last candidate
-};
-
 // Get all candidates
-export const getAllCandidates = (): Promise<Candidate[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve([...candidates]), 500);
-  });
+export const getAllCandidates = async (): Promise<Candidate[]> => {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error("Error fetching candidates:", error);
+    throw error;
+  }
+  
+  return data.map(mapToCandidateModel);
 };
 
 // Search candidates
-export const searchCandidates = (query: string): Promise<Candidate[]> => {
-  return new Promise((resolve) => {
-    const lowercaseQuery = query.toLowerCase();
-    const results = candidates.filter(candidate => 
-      candidate.name.toLowerCase().includes(lowercaseQuery) ||
-      candidate.formNo.toLowerCase().includes(lowercaseQuery) ||
-      candidate.tokenNo.toLowerCase().includes(lowercaseQuery) ||
-      candidate.place.toLowerCase().includes(lowercaseQuery)
-    );
-    setTimeout(() => resolve(results), 300);
-  });
+export const searchCandidates = async (query: string): Promise<Candidate[]> => {
+  const lowercaseQuery = query.toLowerCase();
+  
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .or(`name.ilike.%${lowercaseQuery}%,form_no.ilike.%${lowercaseQuery}%,token_no.ilike.%${lowercaseQuery}%,place.ilike.%${lowercaseQuery}%`)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error("Error searching candidates:", error);
+    throw error;
+  }
+  
+  return data.map(mapToCandidateModel);
 };
 
 // Get paginated candidates
-export const getPaginatedCandidates = (page: number, pageSize: number): Promise<{candidates: Candidate[], total: number}> => {
-  return new Promise((resolve) => {
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedCandidates = candidates.slice(startIndex, endIndex);
-    setTimeout(() => resolve({
-      candidates: paginatedCandidates,
-      total: candidates.length
-    }), 300);
-  });
+export const getPaginatedCandidates = async (page: number, pageSize: number): Promise<{candidates: Candidate[], total: number}> => {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  
+  const { data, error, count } = await supabase
+    .from('applications')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  
+  if (error) {
+    console.error("Error fetching paginated candidates:", error);
+    throw error;
+  }
+  
+  return {
+    candidates: data.map(mapToCandidateModel),
+    total: count || 0
+  };
 };
 
 // Get candidate by id
-export const getCandidateById = (id: number): Promise<Candidate | undefined> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const candidate = candidates.find(c => c.id === id);
-      resolve(candidate);
-    }, 300);
-  });
+export const getCandidateById = async (id: number): Promise<Candidate | undefined> => {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No rows returned, candidate not found
+      return undefined;
+    }
+    console.error("Error fetching candidate by ID:", error);
+    throw error;
+  }
+  
+  return mapToCandidateModel(data);
 };
 
 // Add a new candidate
-export const addCandidate = (candidate: Omit<Candidate, 'id' | 'formNo' | 'tokenNo'>): Promise<Candidate> => {
-  return new Promise((resolve) => {
-    const newId = candidates.length > 0 ? Math.max(...candidates.map(c => c.id)) + 1 : 1;
-    
-    // Use the next form and token numbers from settings
-    const formNo = settings.nextFormNumber.toString();
-    const tokenNo = settings.nextTokenNumber.toString();
-    
-    // Increment the settings
-    settings.nextFormNumber++;
-    settings.nextTokenNumber++;
-    
-    const newCandidate = { 
-      ...candidate, 
-      id: newId, 
-      formNo, 
-      tokenNo 
-    };
-    
-    candidates = [newCandidate, ...candidates];
-    setTimeout(() => resolve(newCandidate), 500);
+export const addCandidate = async (candidate: Omit<Candidate, 'id' | 'form_no' | 'token_no' | 'created_at' | 'updated_at'>): Promise<Candidate> => {
+  // First get settings to know the next form number and token number
+  const settings = await getSettings();
+  
+  const newCandidate = {
+    form_no: settings.nextFormNumber.toString(),
+    token_no: settings.nextTokenNumber.toString(),
+    name: candidate.name,
+    dob: candidate.dob,
+    contact_no: candidate.contactNo || '',
+    place: candidate.place,
+    examDate: candidate.examDate,
+    examTime: candidate.examTime
+  };
+  
+  const { data, error } = await supabase
+    .from('applications')
+    .insert([newCandidate])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error("Error adding candidate:", error);
+    throw error;
+  }
+  
+  // After successfully adding candidate, increment the settings
+  await updateSettings({
+    nextFormNumber: settings.nextFormNumber + 1,
+    nextTokenNumber: settings.nextTokenNumber + 1
   });
+  
+  return mapToCandidateModel(data);
 };
 
 // Update an existing candidate
-export const updateCandidate = (updatedCandidate: Candidate): Promise<Candidate> => {
-  return new Promise((resolve, reject) => {
-    const index = candidates.findIndex(c => c.id === updatedCandidate.id);
-    
-    if (index !== -1) {
-      candidates[index] = updatedCandidate;
-      setTimeout(() => resolve(updatedCandidate), 500);
-    } else {
-      setTimeout(() => reject(new Error("Candidate not found")), 500);
-    }
-  });
+export const updateCandidate = async (updatedCandidate: Candidate): Promise<Candidate> => {
+  const { id, ...candidateData } = updatedCandidate;
+  
+  // Map to database model
+  const dbCandidate = {
+    form_no: candidateData.form_no,
+    token_no: candidateData.token_no,
+    name: candidateData.name,
+    dob: candidateData.dob,
+    contact_no: candidateData.contactNo || '',
+    place: candidateData.place,
+    // We don't update created_at or updated_at as they're handled by the database
+  };
+  
+  const { data, error } = await supabase
+    .from('applications')
+    .update(dbCandidate)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error("Error updating candidate:", error);
+    throw error;
+  }
+  
+  return mapToCandidateModel(data);
 };
 
 // Delete a candidate
-export const deleteCandidate = (id: number): Promise<boolean> => {
-  return new Promise((resolve) => {
-    const initialLength = candidates.length;
-    candidates = candidates.filter(c => c.id !== id);
-    setTimeout(() => resolve(candidates.length < initialLength), 500);
-  });
+export const deleteCandidate = async (id: number): Promise<boolean> => {
+  const { error } = await supabase
+    .from('applications')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error("Error deleting candidate:", error);
+    throw error;
+  }
+  
+  return true;
 };
 
+// Settings table doesn't exist in the database, so we'll store it in localStorage
+const SETTINGS_KEY = "admission_test_app_settings";
+
 // Get settings
-export const getSettings = (): Promise<Settings> => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve({...settings}), 300);
-  });
+export const getSettings = async (): Promise<Settings> => {
+  const storedSettings = localStorage.getItem(SETTINGS_KEY);
+  if (storedSettings) {
+    return JSON.parse(storedSettings);
+  }
+  
+  // Default settings if none exist
+  const defaultSettings: Settings = {
+    nextFormNumber: 24261, // Default starting values
+    nextTokenNumber: 62     // Default starting values
+  };
+  
+  // Save default settings
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
+  
+  return defaultSettings;
 };
 
 // Update settings
-export const updateSettings = (newSettings: Settings): Promise<Settings> => {
-  return new Promise((resolve) => {
-    settings = {...newSettings};
-    setTimeout(() => resolve({...settings}), 500);
-  });
+export const updateSettings = async (newSettings: Settings): Promise<Settings> => {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+  return newSettings;
 };
+
+// Helper function to map database model to our application model
+function mapToCandidateModel(dbRecord: any): Candidate {
+  return {
+    id: dbRecord.id,
+    form_no: dbRecord.form_no,
+    token_no: dbRecord.token_no,
+    name: dbRecord.name,
+    dob: dbRecord.dob,
+    contactNo: dbRecord.contact_no,
+    place: dbRecord.place,
+    examDate: dbRecord.examDate,
+    examTime: dbRecord.examTime,
+    created_at: dbRecord.created_at,
+    updated_at: dbRecord.updated_at
+  };
+}

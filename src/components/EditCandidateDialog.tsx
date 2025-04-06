@@ -80,25 +80,25 @@ export const EditCandidateDialog = ({
         
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="formNo" className="text-right">
+            <Label htmlFor="form_no" className="text-right">
               Form No.
             </Label>
             <Input
-              id="formNo"
-              value={formData.formNo}
-              onChange={(e) => handleChange('formNo', e.target.value)}
+              id="form_no"
+              value={formData.form_no}
+              onChange={(e) => handleChange('form_no', e.target.value)}
               className="col-span-3"
             />
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tokenNo" className="text-right">
+            <Label htmlFor="token_no" className="text-right">
               Token No.
             </Label>
             <Input
-              id="tokenNo"
-              value={formData.tokenNo}
-              onChange={(e) => handleChange('tokenNo', e.target.value)}
+              id="token_no"
+              value={formData.token_no}
+              onChange={(e) => handleChange('token_no', e.target.value)}
               className="col-span-3"
             />
           </div>

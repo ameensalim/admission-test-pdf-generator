@@ -81,8 +81,8 @@ export const CandidatesTable = ({ candidates, onDelete, onEdit }: CandidatesTabl
         <TableBody>
           {candidates.map((candidate) => (
             <TableRow key={candidate.id}>
-              <TableCell>{candidate.formNo}</TableCell>
-              <TableCell>{candidate.tokenNo}</TableCell>
+              <TableCell>{candidate.form_no}</TableCell>
+              <TableCell>{candidate.token_no}</TableCell>
               <TableCell className="font-medium">{candidate.name}</TableCell>
               <TableCell>{candidate.dob}</TableCell>
               <TableCell>{candidate.contactNo}</TableCell>

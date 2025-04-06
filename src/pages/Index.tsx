@@ -297,23 +297,34 @@ const Index = () => {
                             
                             return (
                               <PaginationItem key={page}>
-                                <PaginationLink
-                                  isActive={page === currentPage}
-                                  onClick={() => setCurrentPage(page)}
-                                  className="cursor-pointer"
-                                >
-                                  {page}
-                                </PaginationLink>
+                                {page === currentPage ? (
+                                  <span className="flex h-9 items-center justify-center px-3 rounded-md bg-primary text-white">
+                                    {page}
+                                  </span>
+                                ) : (
+                                  <PaginationLink
+                                    onClick={() => setCurrentPage(page)}
+                                    className="cursor-pointer"
+                                  >
+                                    {page}
+                                  </PaginationLink>
+                                )}
                               </PaginationItem>
                             );
                           })
                         }
                         
                         <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
+                          {currentPage === totalPages ? (
+                            <span className="flex h-9 items-center justify-center px-3 opacity-50">
+                              Next
+                            </span>
+                          ) : (
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              className="cursor-pointer"
+                            />
+                          )}
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>
@@ -359,23 +370,34 @@ const Index = () => {
                             
                             return (
                               <PaginationItem key={page}>
-                                <PaginationLink
-                                  isActive={page === currentPage}
-                                  onClick={() => setCurrentPage(page)}
-                                  className="cursor-pointer"
-                                >
-                                  {page}
-                                </PaginationLink>
+                                {page === currentPage ? (
+                                  <span className="flex h-9 items-center justify-center px-3 rounded-md bg-primary text-white">
+                                    {page}
+                                  </span>
+                                ) : (
+                                  <PaginationLink
+                                    onClick={() => setCurrentPage(page)}
+                                    className="cursor-pointer"
+                                  >
+                                    {page}
+                                  </PaginationLink>
+                                )}
                               </PaginationItem>
                             );
                           })
                         }
                         
                         <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
+                          {currentPage === totalPages ? (
+                            <span className="flex h-9 items-center justify-center px-3 opacity-50">
+                              Next
+                            </span>
+                          ) : (
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              className="cursor-pointer"
+                            />
+                          )}
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>
