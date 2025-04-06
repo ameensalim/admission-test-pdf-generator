@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -32,17 +31,14 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 6;
   
-  // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [currentCandidate, setCurrentCandidate] = useState<Candidate | null>(null);
   
-  // Settings dialog state
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   
   useEffect(() => {
@@ -109,7 +105,7 @@ const Index = () => {
   };
   
   const handleAddCandidate = (candidate: Candidate) => {
-    fetchCandidates(); // Refresh the list after adding
+    fetchCandidates();
     setShowForm(false);
   };
   
@@ -117,7 +113,6 @@ const Index = () => {
     setCandidates(prev => prev.filter(c => c.id !== id));
     setFilteredCandidates(prev => prev.filter(c => c.id !== id));
     
-    // Check if we need to fetch the previous page
     if (filteredCandidates.length === 1 && currentPage > 1) {
       setCurrentPage(prev => prev - 1);
     } else {
@@ -290,11 +285,12 @@ const Index = () => {
                             Math.abs(page - currentPage) <= 1
                           ))
                           .map((page, i, arr) => {
-                            // Add ellipsis
                             if (i > 0 && page > arr[i - 1] + 1) {
                               return (
                                 <PaginationItem key={`ellipsis-${page}`}>
-                                  <PaginationLink disabled>...</PaginationLink>
+                                  <span className="flex h-9 items-center justify-center px-3">
+                                    ...
+                                  </span>
                                 </PaginationItem>
                               );
                             }
@@ -351,11 +347,12 @@ const Index = () => {
                             Math.abs(page - currentPage) <= 1
                           ))
                           .map((page, i, arr) => {
-                            // Add ellipsis
                             if (i > 0 && page > arr[i - 1] + 1) {
                               return (
                                 <PaginationItem key={`ellipsis-${page}`}>
-                                  <PaginationLink disabled>...</PaginationLink>
+                                  <span className="flex h-9 items-center justify-center px-3">
+                                    ...
+                                  </span>
                                 </PaginationItem>
                               );
                             }
