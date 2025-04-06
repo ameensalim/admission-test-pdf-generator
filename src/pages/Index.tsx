@@ -144,7 +144,7 @@ const Index = () => {
                 Admission Test PDF Generator
               </h1>
               <p className="mt-2 text-lg text-gray-600 dark:text-gray-300">
-                Generate and download admit cards for candidates
+                Darunnoor Education Centre kashipatna
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
