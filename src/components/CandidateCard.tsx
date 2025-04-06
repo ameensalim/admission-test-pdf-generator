@@ -1,5 +1,10 @@
-
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Candidate } from "@/types";
 import { toast } from "@/components/ui/use-toast";
@@ -13,16 +18,20 @@ interface CandidateCardProps {
   onEdit: (candidate: Candidate) => void;
 }
 
-export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProps) => {
+export const CandidateCard = ({
+  candidate,
+  onDelete,
+  onEdit,
+}: CandidateCardProps) => {
   const handleGeneratePDF = async () => {
     try {
       toast({
         title: "Generating PDF",
         description: "Please wait while we generate your PDF...",
       });
-      
+
       await downloadPDF(candidate);
-      
+
       toast({
         title: "PDF Generated",
         description: "Your PDF has been generated and downloaded successfully.",
@@ -38,10 +47,10 @@ export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProp
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this candidate?")) return;
-    
+
     try {
       const success = await deleteCandidate(candidate.id);
-      
+
       if (success) {
         toast({
           title: "Candidate Deleted",
@@ -77,28 +86,28 @@ export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProp
       <CardContent className="pt-6">
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Token No.</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Token No.
+            </div>
             <div className="text-sm font-medium">{candidate.token_no}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Date of Birth</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Date of Birth
+            </div>
             <div className="text-sm font-medium">{candidate.dob}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Contact</div>
-            <div className="text-sm font-medium">{candidate.contactNo}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Contact
+            </div>
+            <div className="text-sm font-medium">{candidate.contact_no}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Place</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              Place
+            </div>
             <div className="text-sm font-medium">{candidate.place}</div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Exam Date</div>
-            <div className="text-sm font-medium">{candidate.examDate || "21-04-2024"}</div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-sm text-gray-500 dark:text-gray-400">Time</div>
-            <div className="text-sm font-medium">{candidate.examTime || "12.00 - 1.30 pm"}</div>
           </div>
         </div>
       </CardContent>
@@ -121,10 +130,7 @@ export const CandidateCard = ({ candidate, onDelete, onEdit }: CandidateCardProp
             <Edit size={16} />
           </Button>
         </div>
-        <Button
-          onClick={handleGeneratePDF}
-          className="flex gap-1 items-center"
-        >
+        <Button onClick={handleGeneratePDF} className="flex gap-1 items-center">
           <FileDown size={16} />
           <span>Generate PDF</span>
         </Button>

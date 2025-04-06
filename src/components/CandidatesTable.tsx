@@ -85,7 +85,7 @@ export const CandidatesTable = ({ candidates, onDelete, onEdit }: CandidatesTabl
               <TableCell>{candidate.token_no}</TableCell>
               <TableCell className="font-medium">{candidate.name}</TableCell>
               <TableCell>{candidate.dob}</TableCell>
-              <TableCell>{candidate.contactNo}</TableCell>
+              <TableCell>{candidate.contact_no}</TableCell>
               <TableCell>{candidate.place}</TableCell>
               <TableCell className="flex gap-2">
                 <Button 

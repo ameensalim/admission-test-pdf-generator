@@ -1,12 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,11 +20,11 @@ interface EditCandidateDialogProps {
   onUpdate: (updatedCandidate: Candidate) => void;
 }
 
-export const EditCandidateDialog = ({ 
-  candidate, 
-  open, 
-  onOpenChange, 
-  onUpdate 
+export const EditCandidateDialog = ({
+  candidate,
+  open,
+  onOpenChange,
+  onUpdate,
 }: EditCandidateDialogProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState<Candidate | null>(null);
@@ -33,7 +32,7 @@ export const EditCandidateDialog = ({
 
   useEffect(() => {
     if (candidate) {
-      setFormData({...candidate});
+      setFormData({ ...candidate });
     }
   }, [candidate]);
 
@@ -41,28 +40,28 @@ export const EditCandidateDialog = ({
     if (formData) {
       setFormData({
         ...formData,
-        [field]: value
+        [field]: value,
       });
     }
   };
 
   const handleSubmit = async () => {
     if (!formData) return;
-    
+
     setIsLoading(true);
     try {
       const updatedCandidate = await updateCandidate(formData);
       onUpdate(updatedCandidate);
       toast({
         title: "Success",
-        description: "Candidate updated successfully"
+        description: "Candidate updated successfully",
       });
       onOpenChange(false);
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update candidate",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -77,7 +76,7 @@ export const EditCandidateDialog = ({
         <DialogHeader>
           <DialogTitle>Edit Candidate</DialogTitle>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="form_no" className="text-right">
@@ -86,11 +85,11 @@ export const EditCandidateDialog = ({
             <Input
               id="form_no"
               value={formData.form_no}
-              onChange={(e) => handleChange('form_no', e.target.value)}
+              onChange={(e) => handleChange("form_no", e.target.value)}
               className="col-span-3"
             />
           </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="token_no" className="text-right">
               Token No.
@@ -98,11 +97,11 @@ export const EditCandidateDialog = ({
             <Input
               id="token_no"
               value={formData.token_no}
-              onChange={(e) => handleChange('token_no', e.target.value)}
+              onChange={(e) => handleChange("token_no", e.target.value)}
               className="col-span-3"
             />
           </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Name
@@ -110,11 +109,11 @@ export const EditCandidateDialog = ({
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
+              onChange={(e) => handleChange("name", e.target.value)}
               className="col-span-3"
             />
           </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="dob" className="text-right">
               Date of Birth
@@ -122,23 +121,11 @@ export const EditCandidateDialog = ({
             <Input
               id="dob"
               value={formData.dob}
-              onChange={(e) => handleChange('dob', e.target.value)}
+              onChange={(e) => handleChange("dob", e.target.value)}
               className="col-span-3"
             />
           </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="contactNo" className="text-right">
-              Contact No.
-            </Label>
-            <Input
-              id="contactNo"
-              value={formData.contactNo}
-              onChange={(e) => handleChange('contactNo', e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="place" className="text-right">
               Place
@@ -146,38 +133,18 @@ export const EditCandidateDialog = ({
             <Input
               id="place"
               value={formData.place}
-              onChange={(e) => handleChange('place', e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="examDate" className="text-right">
-              Exam Date
-            </Label>
-            <Input
-              id="examDate"
-              value={formData.examDate || ""}
-              onChange={(e) => handleChange('examDate', e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="examTime" className="text-right">
-              Exam Time
-            </Label>
-            <Input
-              id="examTime"
-              value={formData.examTime || ""}
-              onChange={(e) => handleChange('examTime', e.target.value)}
+              onChange={(e) => handleChange("place", e.target.value)}
               className="col-span-3"
             />
           </div>
         </div>
-        
+
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isLoading}>
